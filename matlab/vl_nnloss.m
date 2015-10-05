@@ -1,7 +1,7 @@
 function Y = vl_nnloss(X,c,dzdy,varargin)
 %VL_NNLOSS CNN categorical or attribute loss.
 %   Y = VL_NNLOSS(X, C) computes the loss incurred by the prediction
-%   scores X given the categorical labels C.
+%   scores X given the ground-truth C.
 %
 %   The prediction scores X are organised as a field of prediction
 %   vectors, represented by a H x W x D x N array. The first two
@@ -15,7 +15,7 @@ function Y = vl_nnloss(X,c,dzdy,varargin)
 %   case, the loss is summed across pixels (unless otherwise specified
 %   using the `InstanceWeights` option described below).
 %
-%   The array C contains the categorical labels. In the simplest case,
+%   The array C contains the ground-truth. In the simplest case,
 %   C is an array of integers in the range [1, D] with N elements
 %   specifying one label for each of the N images. If H, W > 1, the
 %   same label is implicitly applied to all spatial locations.
@@ -32,6 +32,9 @@ function Y = vl_nnloss(X,c,dzdy,varargin)
 %   (unless otherwise specified using the `InstanceWeights` option
 %   described below).
 %
+%   In the fourth form, C has dimension H x W x D x N and specifies
+%   ground-truth values at each pixel location. 
+%   
 %   DZDX = VL_NNLOSS(X, C, DZDY) computes the derivative of the block
 %   projected onto the output derivative DZDY. DZDX and DZDY have the
 %   same dimensions as X and Y respectively.
@@ -98,6 +101,11 @@ function Y = vl_nnloss(X,c,dzdy,varargin)
 %     if class c=+1 is assigned score x and class c=-1 is assigned
 %     score 0.
 %
+%   When each scalar value c in C is the element-wise gt value of the
+%   corresponding pixel in X, the following losses can be used: 
+%   L2 loss:: `l2`
+%     L(x,c) = sum((x-c).^2),3)
+% 
 %   VL_NNLOSS(...,'OPT', VALUE, ...) supports these additionals
 %   options:
 %
@@ -113,6 +121,8 @@ function Y = vl_nnloss(X,c,dzdy,varargin)
 %
 % This file is part of the VLFeat library and is made available under
 % the terms of the BSD license (see the COPYING file).
+% 
+% L2 loss added by HSU
 
 opts.instanceWeights = [] ;
 opts.classWeights = [] ;
@@ -156,6 +166,15 @@ switch lower(opts.loss)
     % null labels denote instances that should be skipped
     instanceWeights = single(c ~= 0) ;
 
+  case {'l2'}
+    binary = false ;
+    
+    % there must be one gt scalar per prediction scalar
+    assert(labelSize(3) == inputSize(3)) ;
+    
+    % null gt values denote locations that should be skipped
+    instanceWeights = single(c(:,:,1,:) ~= 0) ;
+    
   otherwise
     error('Unknown loss ''%s''.', opts.loss) ;
 end
@@ -209,6 +228,8 @@ if nargin <= 2 || isempty(dzdy)
       t = b + log(exp(-b) + exp(a-b)) ;
     case 'hinge'
       t = max(0, 1 - c.*X) ;
+    case 'l2'
+      t = sqrt(sum((X-c).^2,3)) ;
   end
   Y = instanceWeights(:)' * t(:) ;
 else
@@ -247,6 +268,9 @@ else
       Y = - dzdy .* c ./ (1 + exp(c.*X)) ;
     case 'hinge'
       Y = - dzdy .* c .* (c.*X < 1) ;
+    case 'l2'
+      Y = bsxfun(@times, dzdy, ...
+        bsxfun(@rdivide, X-c, sqrt(max(sum((X-c).^2,3),1e-8)))) ;
   end
 end
 
