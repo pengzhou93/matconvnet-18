@@ -197,7 +197,7 @@ switch lower(opts.loss)
     n = reshape(0:numPixels-1,labelSize) ;
     offset = 1 + mod(n, numPixelsPerImage) + ...
              imageVolume * fix(n / numPixelsPerImage) ;
-    ci = offset + numPixelsPerImage * max(c - 1,0) ;
+    ci = offset + numPixelsPerImage * max(double(c) - 1,0) ;
 end
 
 if nargin <= 2 || isempty(dzdy)
