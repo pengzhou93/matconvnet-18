@@ -43,6 +43,10 @@ function vl_compilenn(varargin)
 %   `EnableImreadJpeg`:: `true`
 %      Set this option to `true` to compile `vl_imreadjpeg`.
 %
+%   `EnableDouble`:: `true`
+%      Set this optino to `true` to compile the support for DOUBLE
+%      data types.
+%
 %   `ImageLibrary`:: `libjpeg` (Linux), `gdiplus` (Windows), `quartz` (Mac)
 %      The image library to use for `vl_impreadjpeg`.
 %
@@ -55,8 +59,8 @@ function vl_compilenn(varargin)
 %      `vl_imreadjpeg`.
 %
 %   `EnableCudnn`:: `false`
-%      Set to `true` to compile CuDNN support. See CuDNN documentation for
-%      the Hardware/CUDA version requirements.
+%      Set to `true` to compile CuDNN support. See CuDNN
+%      documentation for the Hardware/CUDA version requirements.
 %
 %   `CudnnRoot`:: `'local/'`
 %      Directory containing the unpacked binaries and header files of
@@ -93,26 +97,29 @@ function vl_compilenn(varargin)
 %     from NVIDIA. Note that each MATLAB version requires a
 %     particular CUDA Devkit version:
 %
-%     | MATLAB version | Release | CUDA Devkit |
-%     |----------------|---------|-------------|
-%     | 8.2            | 2013b   | 5.5         |
-%     | 8.3            | 2014a   | 5.5         |
-%     | 8.4            | 2014b   | 6.0         |
-%     | 8.6            | 2015b   | Latest(7.5) |
+%     | MATLAB version | Release | CUDA Devkit  |
+%     |----------------|---------|--------------|
+%     | 8.2            | 2013b   | 5.5          |
+%     | 8.3            | 2014a   | 5.5          |
+%     | 8.4            | 2014b   | 6.0          |
+%     | 8.6            | 2015b   | Latest(>7.0) |
 %
 %     A different versions of CUDA may work using the hack described
 %     above (i.e. setting the `CudaMethod` to `nvcc`).
 %
 %   The following configurations have been tested successfully:
 %
-%   * Windows 7 x64, MATLAB R2014a, Visual C++ 2010 and CUDA Toolkit
-%     6.5 (unable to compile with Visual C++ 2013).
+%   * Windows 7 x64, MATLAB R2014a, Visual C++ 2010, 2013 and CUDA Toolkit
+%     6.5. VS 2015 CPU version only (not supported by CUDA Toolkit yet).
 %   * Windows 8 x64, MATLAB R2014a, Visual C++ 2013 and CUDA
 %     Toolkit 6.5.
 %   * Mac OS X 10.9 and 10.10, MATLAB R2013a and R2013b, Xcode, CUDA
 %     Toolkit 5.5.
-%   * GNU/Linux, MATALB R2014a/R2015a/R2015b, gcc, CUDA Toolkit 5.5/6.5/7.5.
+%   * GNU/Linux, MATALB R2014a/R2015a/R2015b, gcc/g++, CUDA Toolkit 5.5/6.5/7.5.
 %
+%   Compilation on Windows with MinGW compiler (the default mex compiler in
+%   Matlab) is not supported. For Windows, please reconfigure mex to use
+%   Visual Studio C/C++ compiler.
 %   Furthermore your GPU card must have ComputeCapability >= 2.0 (see
 %   output of `gpuDevice()`) in order to be able to run the GPU code.
 %   To change the compute capabilities, for `mex` `CudaMethod` edit
@@ -126,7 +133,7 @@ function vl_compilenn(varargin)
 %   code](http://mathworks.com/help/distcomp/run-mex-functions-containing-cuda-code.html),
 %   `vl_setup()`, `vl_imreadjpeg()`.
 
-% Copyright (C) 2014-15 Karel Lenc and Andrea Vedaldi.
+% Copyright (C) 2014-16 Karel Lenc and Andrea Vedaldi.
 % All rights reserved.
 %
 % This file is part of the VLFeat library and is made available under
@@ -143,6 +150,7 @@ addpath(fullfile(root, 'matlab')) ;
 opts.enableGpu        = false;
 opts.enableImreadJpeg = true;
 opts.enableCudnn      = false;
+opts.enableDouble     = true;
 opts.imageLibrary = [] ;
 opts.imageLibraryCompileFlags = {} ;
 opts.imageLibraryLinkFlags = [] ;
@@ -206,6 +214,7 @@ lib_src{end+1} = fullfile(root,'matlab','src','bits','impl','pooling_cpu.cpp') ;
 lib_src{end+1} = fullfile(root,'matlab','src','bits','impl','normalize_cpu.cpp') ;
 lib_src{end+1} = fullfile(root,'matlab','src','bits','impl','bnorm_cpu.cpp') ;
 lib_src{end+1} = fullfile(root,'matlab','src','bits','impl','tinythread.cpp') ;
+lib_src{end+1} = fullfile(root,'matlab','src','bits','imread.cpp') ;
 
 % GPU-specific files
 if opts.enableGpu
@@ -304,6 +313,9 @@ if opts.enableGpu, flags.cc{end+1} = '-DENABLE_GPU' ; end
 if opts.enableCudnn,
   flags.cc{end+1} = '-DENABLE_CUDNN' ;
   flags.cc{end+1} = ['-I' opts.cudnnIncludeDir] ;
+end
+if opts.enableDouble
+  flags.cc{end+1} = '-DENABLE_DOUBLE' ;
 end
 flags.link{end+1} = '-lmwblas' ;
 switch arch
