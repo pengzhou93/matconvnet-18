@@ -178,7 +178,6 @@ switch lower(opts.loss)
 
     % null labels denote instances that should be skipped
     instanceWeights = toClass(c(:,:,1,:) ~= 0) ;
-
   case {'binaryerror', 'binarylog', 'logistic', 'hinge'}
     binary = true ;
 
@@ -194,7 +193,7 @@ switch lower(opts.loss)
     assert(labelSize(3) == inputSize(3)) ;
     
     % null gt values denote locations that should be skipped
-    instanceWeights = toClass(c(:,:,1,:) ~= 0) ;
+    instanceWeights = toClass(ones(labelSize(1),labelSize(2),1,labelSize(4))) ;
   otherwise
     error('Unknown loss ''%s''.', opts.loss) ;
 end
