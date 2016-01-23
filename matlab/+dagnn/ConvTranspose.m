@@ -4,6 +4,7 @@ classdef ConvTranspose < dagnn.Layer
     hasBias = true
     upsample = [1 1]
     crop = [0 0 0 0]
+    initMethod = 'gaussian'
     numGroups = 1
     opts = {'cuDNN'}
   end
@@ -47,7 +48,14 @@ classdef ConvTranspose < dagnn.Layer
     function params = initParams(obj)
       % todo: test this initialization method
       sc = sqrt(2 / prod(obj.size([1 2 4]))) ;
-      params{1} = randn(obj.size,'single') * sc ;
+      switch obj.initMethod
+        case 'gaussian'
+          params{1} = randn(obj.size,'single') * sc ;
+        case 'bilinear'
+          factorY = single([1:obj.upsample(1) (obj.upsample(1)-1):-1:1]/obj.upsample(1));
+          factorX = single([1:obj.upsample(2) (obj.upsample(2)-1):-1:1]/obj.upsample(2));
+          params{1} = bsxfun(@times,factorY'*factorX,permute(eye(obj.size(3)),[3 4 1 2]));
+      end
       if obj.hasBias
         params{2} = zeros(obj.size(3),1,'single') * sc ;
       end
@@ -84,6 +92,23 @@ classdef ConvTranspose < dagnn.Layer
       obj.size = obj.size ;
       obj.upsample = obj.upsample ;
       obj.crop = obj.crop ;
+      switch obj.initMethod
+        case 'gaussian'
+        case 'bilinear'
+          assert(all(obj.size(1:2)==obj.upsample*2-1), 'Incompatible filter size!');
+          assert(obj.size(3)==obj.size(4), ['Initialization method (''bilinear'') '... 
+            'requires the 3rd and 4th dimensions of the filter weights to be equal!']);
+        otherwise
+          error('Unsupported initialization method: ',obj.initMethod);
+      end
+      if(sum(obj.crop(1:2))~=obj.upsample(1)-1 || ...
+         sum(obj.crop(3:4))~=obj.upsample(2)-1), 
+        warning(['Output won''t be exactly [%d %d] times of input. Consider set ' ...
+          '''crop'' to [%d %d %d %d] instead.'], ...
+          obj.upsample(1), obj.upsample(2), ...
+          ceil((obj.upsample(1)-1)/2), floor((obj.upsample(1)-1)/2), ...
+          ceil((obj.upsample(2)-1)/2), floor((obj.upsample(2)-1)/2));
+      end
     end
   end
 end
