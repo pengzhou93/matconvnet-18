@@ -2,6 +2,8 @@ classdef Conv < dagnn.Filter
   properties
     size = [0 0 0 0]
     hasBias = true
+    initMethod = 'gaussian'
+    frozen = false
     opts = {'cuDNN'}
   end
 
@@ -35,7 +37,12 @@ classdef Conv < dagnn.Filter
 
     function params = initParams(obj)
       sc = sqrt(2 / prod(obj.size(1:3))) ;
-      params{1} = randn(obj.size,'single') * sc ;
+      switch obj.initMethod
+        case 'gaussian'
+          params{1} = randn(obj.size,'single') * sc ;
+        case 'one'
+          params{1} = permute(eye(obj.size(3),'single'),[3 4 1 2]);
+      end
       if obj.hasBias
         params{2} = zeros(obj.size(4),1,'single') * sc ;
       end
@@ -54,6 +61,17 @@ classdef Conv < dagnn.Filter
       obj.size = obj.size ;
       obj.stride = obj.stride ;
       obj.pad = obj.pad ;
+      switch obj.initMethod
+        case 'gaussian'
+        case 'one'
+          assert(obj.size(1)==1 && obj.size(2)==1, ['Filter width should be set to ''1'' for ' ...
+            'assigned initialization method (''one'')']);
+          assert(obj.size(3)==obj.size(4), ['Initialization method (''one'') '...
+            'requires the 3rd and 4th dimensions of the filter weights to be equal!']);
+        otherwise
+          error('Unsupported initialization method: ', obj.initMethod);
+      end
     end
+
   end
 end
