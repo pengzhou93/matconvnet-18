@@ -12,11 +12,20 @@ function initParams(obj)
 for l = 1:numel(obj.layers)
   p = obj.getParamIndex(obj.layers(l).params) ;
   params = obj.layers(l).block.initParams() ;
+  frozen = false;
+  if isprop(obj.layers(l).block,'frozen') && obj.layers(l).block.frozen, 
+      frozen = true;
+  end
   switch obj.device
     case 'cpu'
       params = cellfun(@gather, params, 'UniformOutput', false) ;
     case 'gpu'
       params = cellfun(@gpuArray, params, 'UniformOutput', false) ;
   end
-  [obj.params(p).value] = deal(params{:}) ;
+  % [obj.params(p).value] = deal(params{:}) ;
+  for i = 1:numel(params), 
+      if ~frozen || isempty(obj.params(p).value), 
+          obj.params(p(i)).value = params{i};
+      end
+  end
 end
