@@ -24,7 +24,7 @@ for l = 1:numel(obj.layers)
   end
   % [obj.params(p).value] = deal(params{:}) ;
   for i = 1:numel(params), 
-      if ~frozen || isempty(obj.params(p).value), 
+      if ~frozen || isempty(obj.params(p(i)).value), 
           obj.params(p(i)).value = params{i};
       end
   end
