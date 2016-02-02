@@ -3,7 +3,6 @@ classdef Conv < dagnn.Filter
     size = [0 0 0 0]
     hasBias = true
     initMethod = 'gaussian'
-    frozen = false
     opts = {'cuDNN'}
   end
 

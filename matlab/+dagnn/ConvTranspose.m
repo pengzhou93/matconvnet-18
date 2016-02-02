@@ -5,7 +5,6 @@ classdef ConvTranspose < dagnn.Layer
     upsample = [1 1]
     crop = [0 0 0 0]
     initMethod = 'gaussian'
-    frozen = false
     numGroups = 1
     opts = {'cuDNN'}
   end
@@ -111,6 +110,5 @@ classdef ConvTranspose < dagnn.Layer
           ceil((obj.size(2)-obj.upsample(2))/2), floor((obj.size(2)-obj.upsample(2))/2));
       end
     end
-
   end
 end
