@@ -28,6 +28,7 @@ opts.profile = false ;
 
 opts.derOutputs = {'objective', 1} ;
 opts.extractStatsFn = @extractStats ;
+opts.checkpointFn = []; % will be called after every epoch 
 opts.plotStatistics = true;
 opts = vl_argparse(opts, varargin) ;
 
@@ -135,6 +136,11 @@ for epoch=start+1:opts.numEpochs
     drawnow ;
     print(1, modelFigPath, '-dpdf') ;
   end
+
+  if ~isempty(opts.checkpointFn), 
+    opts.checkpointFn();
+  end
+
 end
 
 % -------------------------------------------------------------------------
