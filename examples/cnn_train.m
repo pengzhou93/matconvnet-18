@@ -42,6 +42,9 @@ opts.errorFunction = 'multiclass' ;
 opts.errorLabels = {} ;
 opts.plotDiagnostics = false ;
 opts.plotStatistics = true;
+
+opts.maxIterPerEpoch = [Inf Inf]; 
+
 opts = vl_argparse(opts, varargin) ;
 
 if ~exist(opts.expDir, 'dir'), mkdir(opts.expDir) ; end
@@ -49,6 +52,7 @@ if isempty(opts.train), opts.train = find(imdb.images.set==1) ; end
 if isempty(opts.val), opts.val = find(imdb.images.set==2) ; end
 if isnan(opts.train), opts.train = [] ; end
 if isnan(opts.val), opts.val = [] ; end
+if numel(opts.maxIterPerEpoch)==1, opts.maxIterPerEpoch = opts.maxIterPerEpoch*[1 1]; end
 
 % -------------------------------------------------------------------------
 %                                                    Network initialization
@@ -126,7 +130,10 @@ for epoch=start+1:opts.numEpochs
   % train one epoch and validate
   learningRate = opts.learningRate(min(epoch, numel(opts.learningRate))) ;
   train = opts.train(randperm(numel(opts.train))) ; % shuffle
-  val = opts.val ;
+  val = opts.val(randperm(numel(opts.val))) ;
+  train = train(1:min(numel(train),opts.batchSize*opts.maxIterPerEpoch(1)));
+  val = val(1:min(numel(val),opts.batchSize*opts.maxIterPerEpoch(2)));
+
 
   if numGpus <= 1
     [net,stats.train,prof] = process_epoch(opts, getBatch, epoch, train, learningRate, imdb, net) ;
