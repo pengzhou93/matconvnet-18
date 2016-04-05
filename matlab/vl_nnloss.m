@@ -109,7 +109,7 @@ function Y = vl_nnloss(X,c,dzdy,varargin)
 %   When each scalar value c in C is the element-wise gt value of the
 %   corresponding pixel in X, the following losses can be used: 
 %   L2 loss:: `l2`
-%     L(x,c) = sum((x-c).^2),3)
+%     L(x,c) = sum((x-c).^2))/2
 % 
 %   VL_NNLOSS(...,'OPT', VALUE, ...) supports these additionals
 %   options:
@@ -251,7 +251,7 @@ if nargin <= 2 || isempty(dzdy)
     case 'hinge'
       t = max(0, 1 - c.*X) ;
     case 'l2'
-      t = sqrt(sum((X-c).^2,3)) ;
+      t = sum((X-c).^2,3)/2 ;
   end
   Y = instanceWeights(:)' * t(:) ;
 else
@@ -291,8 +291,9 @@ else
     case 'hinge'
       Y = - dzdy .* c .* (c.*X < 1) ;
     case 'l2'
-      Y = bsxfun(@times, dzdy, ...
-        bsxfun(@rdivide, X-c, sqrt(max(sum((X-c).^2,3),1e-8)))) ;
+      % Y = bsxfun(@times, dzdy, ...
+      %   bsxfun(@rdivide, X-c, sqrt(max(sum((X-c).^2,3),1e-8)))) ;
+      Y = bsxfun(@times, dzdy, X-c); 
   end
 end
 
