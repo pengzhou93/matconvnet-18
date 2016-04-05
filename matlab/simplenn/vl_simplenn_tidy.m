@@ -82,6 +82,10 @@ for l = 1:numel(net.layers)
       defaults = [ defaults {...
         'leak', 0}] ;
 
+    case 'loss'
+      defaults = [ defaults {...
+        'loss', 'softmaxlog'}] ;
+
     case 'dropout'
       defaults = [ defaults {...
         'rate', 0.5}] ;
